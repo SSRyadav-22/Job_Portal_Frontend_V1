@@ -18,13 +18,28 @@ pipeline {
       }
     }
 
+    //stage('Setup .env') {
+      //steps {
+        //sh "echo 'VITE_CANDIDATES_ENDPOINT=${params.VITE_CANDIDATES_ENDPOINT}' > .env"
+        //sh 'echo ".env created with VITE_CANDIDATES_ENDPOINT"'
+      //}
+    //}
+    // --- ❗️ THIS IS THE NEW, CORRECTED STAGE ---
     stage('Setup .env') {
-      steps {
-        sh "echo 'VITE_CANDIDATES_ENDPOINT=${params.VITE_CANDIDATES_ENDPOINT}' > .env"
-        sh 'echo ".env created with VITE_CANDIDATES_ENDPOINT"'
-      }
+        steps {
+            // Use withCredentials to securely fetch the URL
+            withCredentials([
+                string(credentialsId: params.VITE_CANDIDATES_ENDPOINT_CRED_ID, variable: 'CANDIDATE_URL')
+            ]) {
+                // Write the actual secret URL into the .env file
+                sh "echo 'VITE_CANDIDATES_ENDPOINT=${CANDIDATE_URL}' > .env"
+                sh 'echo "--- .env file contents ---"'
+                sh 'cat .env' // This prints the file to the log for debugging
+                sh 'echo "--------------------------"'
+            }
+        }
     }
-
+    // --- END OF FIX ---
     stage('Install dependencies') {
       steps {
         sh 'node -v && npm --version && (npm ci || npm install)'
